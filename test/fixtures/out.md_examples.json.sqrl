@@ -1,0 +1,16 @@
+[
+  {
+    "line": 4,
+    "code": "console.log('dirname:', __dirname);\nconsole.log('filename:', __filename);\nconsole.log(\"Example 14\");\nconsole.log(\"Example 15\");",
+    "lang": "bang",
+    "file": "{{test_dir}}/fixtures/dummy3.md",
+    "name": "dummy3.md #0"
+  },
+  {
+    "line": 12,
+    "code": "console.log(\"Example 16\");\nconsole.log(\"Example 17\");\nconsole.log(\"Example 18\");",
+    "lang": null,
+    "file": "{{test_dir}}/fixtures/dummy3.md",
+    "name": "dummy3.md #1"
+  }
+]

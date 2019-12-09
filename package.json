@@ -1,0 +1,83 @@
+{
+  "name": "ferrum.doctest",
+  "version": "0.0.1",
+  "description": "Test the examples included in your documentation",
+  "main": "index.js",
+  "bin": {
+    "ferrum.doctest": "./cli.js"
+  },
+  "scripts": {
+    "test": "node ./cli.js exec -s index.js -s cli.js --mdsrc README.md -c 'nyc --reporter=text --reporter=lcov --check-coverage --branches 80 --statements 80 --lines 80 mocha --reporter xunit --reporter-options output=./junit/test-results.xml --require source-map-support/register -t 20000 \"$DOCTEST_FILE\" test'",
+    "test-ci": "npm run test && codecov",
+    "lint": "node ./cli.js exec -- eslint --ignore-pattern test/fixtures index.js cli.js test",
+    "semantic-release": "semantic-release",
+    "docs": "jsdoc -c .jsdoc.json",
+    "commit": "git-cz",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adobe/ferrum.doctest"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/adobe/ferrum.doctest/issues"
+  },
+  "homepage": "https://github.com/adobe/ferrum.doctest#readme",
+  "dependencies": {
+    "documentation": "^12.1.4",
+    "ferrum": "^1.5.0",
+    "remark": "^11.0.2",
+    "source-map": "^0.7.3",
+    "source-map-support": "^0.5.16",
+    "squirrelly": "^7.9.0",
+    "uuid": "^3.3.3",
+    "yargs": "^15.1.0"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "3.0.6",
+    "@semantic-release/commit-analyzer": "6.3.3",
+    "@semantic-release/git": "7.0.18",
+    "@semantic-release/github": "5.5.5",
+    "@semantic-release/npm": "5.3.5",
+    "@semantic-release/release-notes-generator": "7.3.5",
+    "ajv": "6.10.2",
+    "codecov": "3.6.1",
+    "commitizen": "4.0.3",
+    "cz-conventional-changelog": "3.0.2",
+    "docdash": "git+https://github.com/koraa/docdash.git",
+    "eslint": "6.8.0",
+    "eslint-config-airbnb": "18.0.1",
+    "eslint-plugin-header": "3.0.0",
+    "eslint-plugin-import": "2.19.1",
+    "eslint-plugin-jsx-a11y": "6.2.3",
+    "eslint-plugin-react": "7.17.0",
+    "jsdoc": "3.6.3",
+    "junit-report-builder": "1.3.3",
+    "lint-staged": "9.5.0",
+    "mocha": "7.0.0",
+    "mocha-junit-reporter": "1.23.1",
+    "mocha-parallel-tests": "^2.2.2",
+    "nyc": "15.0.0",
+    "semantic-release": "15.14.0",
+    "snyk": "1.277.1"
+  },
+  "snyk": true,
+  "renovate": {
+    "extends": [
+      "config:base",
+      "schedule:earlyMondays"
+    ],
+    "timezone": "Europe/Zurich",
+    "packageRules": [
+      {
+        "packagePatterns": [
+          ".*"
+        ],
+        "groupName": "any"
+      }
+    ]
+  }
+}

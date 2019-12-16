@@ -1,17 +1,12 @@
 const fs = require('fs');
+const process = require('process');
 const { spawn } = require('child_process');
 const { tmpdir } = require('os');
 const { promisify } = require('util');
-const { exit, argv } = require('process');
+const { exit } = require('process');
 const { uuid4: uuid } = require('uuid');
-const { build: parseDoc } = require('documentation');
 const { type, isdef, each, xnor, pipe, prepend } = require('ferrum');
-const {
-  _requireNocache,
-  defaultTemplate,
-  cliGenerate,
-  cliExecute,
-} = require('./');
+const { _requireNocache, defaultTemplate, generateTests } = require('./');
 
 // Down with singletons!
 const yargs = () => _requireNocache('yargs');
@@ -23,19 +18,41 @@ const stat = promisify(fs.stat);
 const mkdir = promisify(fs.mkdir);
 const symlink = promisify(fs.symlink);
 
+/**
+ * Used to mark unreachable code. Terminates the process.
+ *
+ * @function
+ * @private
+ */
 const unreachable = () => {
   console.error('[FATAL] Executing unreachable code! This should not happen.');
   exit(1);
 };
 
-// Test if a path is at the root of the file system
+/**
+ * Test if the given path represents for the root of the file system (on unix)
+ * or a drive (on windows).
+ *
+ * @function
+ * @private
+ * @param {String} p The path
+ * @returns {Boolean}
+ */
 const isRoot = (p) => {
   // Note: Using this slightly convoluted method for portability
   const p_ = path.normalize(p);
   return path.dirname(p_) == p;
 };
 
-// Execute a system command
+/**
+ * Execute a command directly (without a shell)
+ *
+ * @function
+ * @private
+ * @param {String[]} cmd
+ * @param {Object} opts Extra parameters passed to `child_process.spawn()`
+ * @returns {ChildProcess}
+ */
 const system = (cmd, opts) => {
   const [command, ...args] = cmd;
   return spawn(command, args, {
@@ -44,25 +61,96 @@ const system = (cmd, opts) => {
   });
 };
 
-// Execute a system command with a shell
+/**
+ * Execute a system command with a shell
+ *
+ * @function
+ * @private
+ * @param {String} shellCode
+ * @param {Object} opts Extra parameters passed to `child_process.spawn()`
+ * @returns {ChildProcess}
+ */
 const systemShell = (shellCode, opts) =>
     system([shellCode], { shell: true, ...opts });
 
-// Wait until a child process exits
+/**
+ * Wait until a child process exits
+ *
+ * @function
+ * @private
+ * @param {ChildProcess} child
+ * @returns {Promise<Number>} Promise resolving to the exit code as
+ *   soon as the child process exits.
+ */
 const onChildExit = (child) => new Promise((res) =>
     child.on('exit', (code) =>
         res(code)));
 
-// Ensure that the given parameter is an array
+/**
+ * Ensure that the given parameter is an array
+ *
+ * @function
+ * @private
+ * @param {*} v Arrays will not be modified. Other values will be
+ *   wrapped in array.
+ * @returns {Array}
+ */
 const liftArray = (v) => type(v) === Array ? v : [v];
 
-// Transform a string encoded list
+/**
+ * Transform a list encoded as a value separated string.
+ *
+ * ```
+ * const assert = require('assert');
+ * const { filter }
+ * const { transformStringList } = require('ferrum.doctest/cli');
+ *
+ * assert.strictEquals(
+ *   transformStringList('1;2;3;4;5', ';',
+ *     map(Number),
+ *     filter((v) => (v % 2) !== 0)), // isOdd
+ *   '1;3;5');
+ * ```
+ *
+ * @function
+ * @private
+ * @param {Boolean} v Assertion value.
+ * @param {String} msg Error message
+ */
 const transformStringList = (str, divider, ...fns) => pipe(
   empty(str) ? [] : str.split(divider),
   ...fns
   join(divider));
 
-// Helper for defining commands
+/**
+ * Assert; display yargs help + error message and exit if assertion fails.
+ *
+ * @function
+ * @private
+ * @param {Boolean} v Assertion value.
+ * @param {String} msg Error message
+ */
+const assertCliParams = (v, msg) => {
+  if (!v) {
+    yargs.printHelp();
+    console.error(msg);
+    yargs.exit(1);
+  }
+};
+
+/**
+ * Helper for defining yargs commands
+ *
+ * @function
+ * @private
+ * @param {Yargs} yargs instance
+ * @param {String[]} names Name+aliases of the positional
+ * @param {Object} opts
+ * @param {String} opts.description
+ * @param {String} opts.usage Usage string as taken by `Yargs.usage`
+ * @param {Function} args Handler used to specify the options the command takes.
+ * @param {Function} handler Will be invoked to further customize the parameter object.
+ */
 const cmd = (y, names, { description, args, handler, usage}) => {
   const args_ = (y2) => {
     if (isdef(usage)) {
@@ -73,15 +161,17 @@ const cmd = (y, names, { description, args, handler, usage}) => {
   y.command(names, description, args_, handler);
 };
 
-const assertCliParams = (v, msg) => {
-  if (!v) {
-    yargs.printHelp();
-    console.error(msg);
-    yargs.exit(1);
-  }
-};
-
-// Helper for defining a parameter/option with an argument
+/**
+ * Helper for defining a parameter with a single argument
+ *
+ * @function
+ * @private
+ * @param {Yargs} yargs instance
+ * @param {String[]} names Name of the positional
+ * @param {String} type Type of the positional as specified by `Yargs.positional`.
+ * @param {String} description. This positional may be omitted.
+ * @param {Object} opts Further options will be passed to `Yargs.positional`
+ */
 const param = (y, names, typ = 'string', description, opts = {}) => {
   if (type(description) === Object) {
     return param(y, names, typ, undefined, description);
@@ -98,11 +188,27 @@ const param = (y, names, typ = 'string', description, opts = {}) => {
   });
 };
 
-// Helper for defining a positional argument
+/**
+ * Helper for defining a positional argument
+ *
+ * @function
+ * @private
+ * @param {Yargs} yargs instance
+ * @param {String} name Name of the positional
+ * @param {String} type Type of the positional as specified by `Yargs.positional`.
+ * @param {String} description
+ * @param {Object} opts Further options will be passed to `Yargs.positional`
+ */
 const pos = (y, name, type, description, opts={}) =>
-    y.positional(name, { type, description, opts });
+    y.positional(name, { type, description, ...opts });
 
-// Helper used by multiple commands to define common options
+/**
+ * Declare the common parameters of both the env and generate cmd.
+ *
+ * @function
+ * @private
+ * @param {Yargs} yargs instance
+ */
 const declareCommonParams = (y) => {
   param(y, ['template', 't'], 'string', {
     default: null,
@@ -127,6 +233,13 @@ const declareCommonParams = (y) => {
   });
 };
 
+/**
+ * Declare the parameters of the env cmd.
+ *
+ * @function
+ * @private
+ * @param {Yargs} yargs instance
+ */
 const declareEnvCmd = (y) => {
   cmd(y, 'exec [argsCommand...]', {
     usage:
@@ -176,6 +289,13 @@ const declareEnvCmd = (y) => {
   });
 };
 
+/**
+ * Declare the parameters of the generate cmd.
+ *
+ * @function
+ * @private
+ * @param {Yargs} yargs instance
+ */
 const declareGenerateCmd = (y) => {
   cmd(y, 'generate', {
     usage:
@@ -205,7 +325,17 @@ const declareGenerateCmd = (y) => {
   });
 };
 
-const parseArgs = (y, rawArgs) => {
+/**
+ * Parse arguments
+ *
+ * @function
+ * @private
+ * @param {...String} args CLI args without process/script name
+ * @returns {Object} parsed Parameters as needed by the command being executed…
+ * @returns {String} parsed._ Name of the command to execute.
+ * @returns {String[]} parsed.unparsed The list of arguments behind `--`
+ */
+const parseArgs = (argv) => {
   const y = yargs();
 
   // First configure yargs
@@ -234,12 +364,29 @@ const parseArgs = (y, rawArgs) => {
     '--': unparsed = [],
     '$0': executable,
     ...params
-  } = y.parse(rawArgs);
+  } = y.parse(argv);
 
   return {_: command, unparsed, ...params};
 };
 
-// Given a path determine [pathToPackageDir, packageName]
+/**
+ * Find the package.json used by cliExecute
+ *
+ * Given a directory, this will recursively search parent directories
+ * until a package.json file is found, so this program will work in any
+ * subdirectory of a node project.
+ *
+ * @function
+ * @private
+ * @param {String} pkg Either the path to package.json or a
+ *   directory to search the package.json for.
+ * @param {Object} opts
+ * @param {Boolean} opts.tryParents Disable recursive parent search.
+ *   If this is given the parameter must be the path of the package.json
+ *   or the directory containing it.
+ * @returns {[String, String]} 2-tuple; canonical path to the directory containing
+ *   package.json; name of the package.
+ */
 const findPkg = async (pkg, opts = {}) => {
   const { tryParents = false } = opts;
   const p = path.normalize(pkg);
@@ -273,7 +420,22 @@ const findPkg = async (pkg, opts = {}) => {
   throw err;
 };
 
-
+/**
+ * Implementation of the CLI generate command.
+ *
+ * @function
+ * @private
+ * @param {Object} params yargs parsed CLI params
+ * @param {String} params.out Where to store the generated tests.
+ *   If this is not specified, the tests will be written to stdout.
+ * @param {String} params.shellCommand Path where to store the source map.
+ *   Defaults to `${out}.map` if out is specified. If neither out nor map
+ *   are specified, no source map will be written.
+ * @param {String} params.template The template string to pass to squirrelly
+ * @param {String[]} params.source List of files/directories to search for javascript source files
+ * @param {String[]} params.markdownSource List of files/directories to search for markdown files
+ * @returns {Number} The exit code
+ */
 const cliGenerate = async (params) => {
   const {
     sourcemap = isdef(out) ? `${out}.map` : out,
@@ -282,16 +444,18 @@ const cliGenerate = async (params) => {
   } = params;
 
   // Do the Work
-  const [testData, sourcemapData] = await generateTestFile(rest);
+  const [testData, sourcemapData] = await generateTests(rest);
 
   // The rest is IO…
   const forks = [];
 
+  // Write source map
   if (isdef(sourcemap)) {
     forks.push(
-        writeFile(sourcemap, sourcemapData));
+        writeFile(sourcemap, JSON.stringify(sourcemapData)));
   }
 
+  // Write actual output
   if (isdef(out)) {
     forks.push(
         writeFile(out, testData));
@@ -306,14 +470,29 @@ const cliGenerate = async (params) => {
 
   return 0;
 };
-const cliExecute = async () => {
+
+/**
+ * Implementation of the CLI execute command.
+ *
+ * @function
+ * @private
+ * @param {Object} params yargs parsed CLI params
+ * @param {String} params.shellCommand Command; will be executed as shell code
+ *   Behaviour is undefined if both argsCommand and shellCommand are given.
+ * @param {String[]} params.argsCommand Command; will be execute directly (without passing through the shell)
+ *   Behaviour is undefined if both argsCommand and shellCommand are given.
+ * @param {String} params.package Path to the package.json or the directory containing it.
+ *   If this is not given, the current directory and it's parents will be searched for
+ *   a package.json.
+ * @returns {Number} The exit code
+ */
+const cliExecute = async (params) => {
   const {
-    unparsed,
     shellCommand,
     argsCommand,
     package: pkg,
     ...generateOpts
-  } = req;
+  } = params;
 
   // Try to find the name of the package & it's location
   const [pkgDir, pkgName] = exec(() => {
@@ -351,9 +530,6 @@ const cliExecute = async () => {
   const r = await cliGenerate({
     out: `${tmp}/node_modules/examples.test.js`,
     ...generateOpts});
-  if (isdef(r) && r !== 0) {
-    return r;
-  }
 
   // Run the command
   return onChildExit(
@@ -362,9 +538,17 @@ const cliExecute = async () => {
           : system(argsCommand));
 };
 
-const main = (...rawArgs) => {
+/**
+ * Main entry point
+ *
+ * @function
+ * @private
+ * @param {...String} args CLI args without process/script name
+ * @returns {Number} The exit code
+ */
+const main = (...args) => {
   // This will also automatically process --help and completion
-  const {_: command, ...params} = parseArgs(yargs, rawArgs);
+  const {_: command, ...params} = parseArgs(yargs, args);
 
   if (command === 'exec') {
     return cliGenerate(params);
@@ -375,14 +559,51 @@ const main = (...rawArgs) => {
   unreachable();
 };
 
-// Initial entry point of the app…handles exceptions
-const init = async () => {
-  try {
-    exit(await main(...argv.slice(2)) || 0);
-  } catch (e) {
-    console.error("[FATAL] Uncaught exception: ", e);
-    exit(1);
-  }
+/**
+ * Handler for uncaught rejections/exceptions.
+ * Terminates the process.
+ * @function
+ * @private
+ */
+const onUncaught = (e) => {
+  console.error("[FATAL] Uncaught exception: ", e);
+  exit(1);
 };
 
-init();
+/**
+ * Initial entry point of the app…wrapper for main()
+ * @function
+ * @private
+ */
+const init = async () => {
+  process.on('uncaughtException', onUncaught);
+  process.on('unhandledRejection', onUncaught);
+  process.exitCode = await main(...process.argv.slice(2)) || 0;
+};
+
+module.exports = {
+  yargs,
+  unreachable,
+  isRoot,
+  system,
+  systemShell,
+  onChildExit,
+  liftArray,
+  transformStringList,
+  assertCliParams,
+  cmd,
+  param,
+  pos,
+  declareCommonParams,
+  declareEnvCmd,
+  declareGenerateCmd,
+  parseArgs,
+  findPkg,
+  cliGenerate,
+  cliExecute,
+  main
+};
+
+if (require.main === module) {
+  init();
+}

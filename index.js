@@ -3,20 +3,25 @@ const { argv, exit } = require('process');
 const { basename } = require('path');
 const { v4: uuidgen } = require('uuid');
 const { SourceMapGenerator } = require('source-map');
+const { parse: parseMarkdown } = require('remark');
+const { build: buildDoc } = require('documentation');
 const {
   flat, map, isdef, iter, each, flattenTree, pipe, reject, concat,
   filter, join, get,
 } = require('ferrum');
 
-const defaultTemplate = `
-  describe('Documentation Examples', () => {
-    {{each(examples)}}
-      it('{{@this.exampleName}}', () => {
-        {{@this.code}}
-      });
-    {{/foreach}}
-  });`;
-
+/**
+ * Require magic to require multiple instances of the same module.
+ * Use for modules like squirrelly or yargs which are singletons.
+ *
+ * This works by temporarily removing the cached module from the
+ * module cache and reinserting it after another require.
+ *
+ * @function
+ * @private
+ * @param {String} mod Name of the module to require
+ * @returns {Module}
+ */
 const _requireNocache = (mod) => {
   const name = require.resolve(mod);
   const cache = require.cache[name];
@@ -29,16 +34,110 @@ const _requireNocache = (mod) => {
   return r;
 }
 
+/**
+ * Magic function used to create multiple instances of the squirelly
+ * module.
+ *
+ * Necessary because squirrelly is a singleton.
+ *
+ * This works by temporarily removing the cached module from the
+ * module cache and reinserting it after another require.
+ * @function
+ */
 const makeSquirrelly = () => requireNocache('squirrelly');
 
-const extractMdCodeBlocks = (md) => pipe(
-  flattenTree(md, (node, rec) =>
-      concat([node], rec(node.children || []))),
-  filter(({type}) => type === 'code'),
-  map(({value, lang, position: pos}) =>
-      [value, lang, pos.start.line]));
+/**
+ * Format used to represent examples to be tested.
+ *
+ * Generally, the processing performed by ferrum.doctest can be divided
+ * into two phases: Finding examples and rendering them to a testable file.
+ *
+ * The example format is used for communication between these two stages.
+ *
+ * ```notest
+ * {
+ *   name, // String; Unique, generated name of the example
+ *   code, // String; The code in the example
+ *   lang, // String; Optional language tag for the example
+ *   file, // String; Path to the file containing the example
+ *   line, // Integer; Line number of the example
+ *
+ *   // Non standard, optional properties
+ *   doc, // Object; Documentation description object as generated
+ *        //   by documentation.js (for findDocumentationExamples)
+ *   md,  // Object; mdast (if extracted from markdown)
+ *
+ *   // Third party non standard properties are permitted
+ *   other....
+ * }
+ * ```
+ *
+ * @interface Message
+ */
 
-const extractOneDocExamples_ = function*(doc) {
+/**
+ * Default template used for rendering test files.
+ *
+ * Suitable for testing with mocha.
+ *
+ * @constant
+ * @sourcecode
+ */
+const defaultTemplate = `
+  describe('Documentation Examples', () => {
+    {{each(examples)}}
+      it('{{@this.exampleName}}', () => {
+        {{@this.code}}
+      });
+    {{/foreach}}
+  });`;
+
+/**
+ * Extract examples from a remark/mdast/unifiedjs AST.
+ *
+ * Basically just extracts a list of code blocks…
+ *
+ * @function
+ * @param {Mdast} ast The ast to extract the code blocks from.
+ * @param {Object} opts
+ * @param {String} opts.file Name of the file the ast is from…
+ *   Defaults to null. This *must* be specified for `generatingSourceMap()`
+ *   to work down the road…
+ * @returns {Sequence<Example>}
+ */
+const extractFromMdast = (ast, opts = {}) => {
+  const { file = null } = opts;
+  return pipe(
+    flattenTree(md, (node, rec) =>
+        concat([node], rec(node.children || []))),
+    filter(({type}) => type === 'code'),
+    map(({value, lang, position: pos}) => ({
+      code: value,
+      line: pos.start.line
+      lang,
+      file});
+};
+
+/**
+ * Extract examples from markdown. Pretty much just a small wrapper
+ * around `extractFromMdast()`.
+ *
+ * Basically just extracts a list of code blocks…
+ *
+ * @sourcecode
+ *
+ * @function
+ * @param {String} text The markdown content to extract the code blocks from.
+ * @param {Object} opts
+ * @param {String} opts.file Name of the file the ast is from…
+ *   Defaults to null. This *must* be specified for `generatingSourceMap()`
+ *   to work down the road…
+ * @returns {Sequence<Example>}
+ */
+const extractFromMarkdown = (text, opts = {}) =>
+    extractFromMdast(parseMarkdown(text), opts);
+
+const _extractFromDocImpl = function*(doc) {
   const line0 = doc.loc.start.line;
   const file = doc.context.file;
 
@@ -52,38 +151,106 @@ const extractOneDocExamples_ = function*(doc) {
   }
 
   yield* pipe(
-    extractMdCodeBlocks(doc.description),
+    extractFromMdast(doc.description, { file }),
     map(([code, lang, line]) => ({
         code, lang, line: line+descLine0, doc
     })));
 };
 
-const extractOneDocExamples = (doc) => pipe(
-  extractOneDocExamples_(doc),
-  // Calculate extra properties
-  map(example) => ({
-    ...example,
-    filePath: example.doc.context.file,
-    fileName: example.doc.context.file.match(/[^/]*(?=\.[^./]*$)/),
-    docPath: join(map(example.doc.path, get('name')), '::'),
-  })),
+/**
+ * Extract examples from a single documentation description as
+ * generated by `documentation.js`.
+ *
+ * Extracts from @example tags as well as code blocks inside the
+ * description.
+ *
+ * @function
+ * @param {Object} doc The documentation to extract the examples from.
+ * @returns {Sequence<Example>}
+ */
+const extractFromDoc = (doc) => pipe(
+  _extractFromDocImpl(doc),
 
-  // Add example index & calculate example name
+  // Assign a counter to each example
   group(({fileName, docPath}) => `${fileName} ${docPath}`),
   map(enumerate),
+  flatten,
+
+  // Calculate the example name
   map(([idx, example]) => ({
     ...example,
-    exampleIndex: idx
-    exampleName: `${example.fileName} ${example.docPath} #${idx}`
+    name: `${example.file} ${join(map(example.doc.path, get('name')), '::')} #${idx}`
   }))
 );
 
-const extractExamples = (doc) => flat(map(doc, extractOneDocExamples));
+/**
+ * Find and extract examples from a list of files or directories.
+ *
+ * This will use documentation.js to parse the documentation from
+ * the given files/dirs and then apply extractFromDoc.
+ *
+ * @sourcecode
+ *
+ * @function
+ * @param {String[]} path The list of paths to search source files in
+ * @returns {Sequence<Example>}
+ */
+const findDocExamples = async (paths) => pipe(
+    await buildDoc(paths, {}), // Defer to documentation.js
+    map(extractFromDoc), // Extract documentation examples
+    flatten));
 
-const renderExamples = ({fields, template=defaultTemplate, Sqrl=makeSquirrelly()}) =>
-    Sqrt.Render(template, fields);
+/**
+ * Recursively list the contents of the directory, including the directory
+ * itself.
+ *
+ * @function
+ * @param {String} path
+ * @returns {Promise<Dirent[]>}
+ */
+const _findFs = async (p, ent=await stat(p)) => {
+  const children = !ent.isDirectory() ? [] :
+      map(readdir(p, { withFileTypes: true }), (ent) =>
+          _findFs(path.join(p, ent.name), ent));
+  return conat([p], children);
+};
 
-const generatingSourceMapImpl_ = (examples, renderer) => {
+
+/**
+ * Find and extract examples from a list of markdown files or
+ * directories containing them.
+ *
+ * This will recursively search for files with the `.md` suffix
+ * and then us extractFromMarkdown to extract the example.
+ *
+ * @function
+ * @param {String[]} path The list of paths to search markdown files in.
+ * @returns {Sequence<Example>}
+ */
+const findMarkdownExamples = async (paths) => {
+  const _paths = pipe(
+     paths,
+     map(path.normalize),
+     map(_findFs),
+  );
+
+  const extracted = pipe(
+    // List all files in the paths
+    await flatten(Promise.all(_paths)),
+
+    // Filter out all markdown files
+    filter(([p, stat]) => stat.isFile() && path.extname(p) === '.md'),
+    map(([p, stat]) => path.normalize(p)),
+
+    // Read all files from
+    map(readFile),
+    map(_then(extractFromMarkdown))
+  );
+
+  return flatten(await Promise.all(examples2d));
+}
+
+const _generatingSourceMapImpl = (examples, renderer) => {
   // Generate Example Cache
   const exampleCache = pipe(
     fields.examples,
@@ -174,23 +341,146 @@ const generatingSourceMapImpl_ = (examples, renderer) => {
   yield sourceMap;
 };
 
-const generateTestFile = (opts) => {
+/**
+ * This helper performs some sophisticated magic so source maps
+ * can be generated with arbitrary template renderers.
+ *
+ * # Caveats
+ *
+ * This process comes with some caveats, so please read this documentation
+ * carefully; summarized quickly, you cannot transform the code in any way
+ * for this to work properly either during rendering or during the preprocessing
+ * stages. You must paste it exactly as it was encountered in the source file.
+ * indenting the code is explicitly permitted.
+ *
+ * # How it works
+ *
+ * In order to properly generate a source map, inserting the code and generating
+ * the source map must be done at the same time…
+ *
+ * In order to make it possible to generate source maps while using all sorts
+ * of renderers, a trick is used: This function assigns a UUID to each example
+ * and replaces the code with that example as a pre processing step.
+ *
+ * This way, your renderer inserts the uuid instead of the actual code.
+ *
+ * During post processing, the function looks for all those uuids in the rendered
+ * tests and replaces them with the original code. This way it automatically
+ * knows the correct line number and indentation.
+ *
+ * Since the examples list does not contain information about the column in
+ * the input file (documentation.js actually doesn't output that information properly)
+ * we recover the information by actually reading the original source file and looking
+ * up the indentation/column line by line.
+ *
+ * @function
+ * @param {Sequence<Example>} examples
+ * @param {Function} renderer. Takes the list of examples, renders the
+ *   examples into a test file and returns the render as a string.
+ * @returns {[String, SourceMap]} 2-tuple containing: The fully compiled
+ *   test source code (as returned by your renderer). The Source Map object
+ *   (as specified by mozilla's source-map library). Can be serialized using
+ *   `JSON.stringify(...)`
+ */
+const generatingSourceMap = (examples, renderer) => {
+  const chunks = list(_generatingSourceMapImpl(examples, renderer));
+  const souceMap = chunks.pop();
+  return [join(chunks, ''), souceMap];
+}
+
+/**
+ * Generate the test code and the source map.
+ *
+ * This is the pretty much the `$ ferrum.doctest generate` cli command,
+ * without writing the files to disk.
+ *
+ * This contains only very high level glue code, no complex implementation
+ * details. If you wish to customize how ferrum.doctest operates, you may
+ * use this function as a template & copy it. The source is very well documented
+ * to facilitate this.
+ *
+ * @sourcecode
+ *
+ * @function
+ * @param {Object} opts
+ * @param {String} opts.template The template string to pass to
+ *   squirrelly. Defaults to defaultTemplate.
+ * @param {String[]} opts.source List of files/directories to search for javascript source files
+ * @param {String[]} opts.markdownSource List of files/directories to search for markdown files
+ * @returns {[String, SourceMap]} 2-tuple containing: The fully compiled
+ *   test source code. The Source Map object (as specified by mozilla's
+ *   source-map library). Can be serialized using `JSON.stringify(...)`
+ */
+const generateTests = (opts) => {
   const {template = defaultTemplate, source, markdownSource} = opts;
+  // We are using the ferrum.js pipeline feature here to model a
+  // multi step processing pipeline.
+  // Checkout https://www.ferrumjs.org to find many of it's useful functions
+  // like `map()`, `filter()` and many others.
   return pipe(
+    // The first step is called a 'source'; it doesn't take a sequence as
+    // input but produces one
     concat(
-        findDocumentationExamples(source),
-        findMarkdownExamples(markdownSource)),
+        // This is what actually finds and parses the documentation.
+        // You could replace this or add another example finder to
+        // hook into other documentation systems.
+        await findDocExamples(source),
+        // This is what searches for markdown files and extracts it's
+        // examples
+        await findMarkdownExamples(markdownSource)),
+
+    // At this point in the pipeline, we have a sequence of example-objects
+    //
+    // {
+    //   name, // Unique, generated name of the example
+    //   code, // The code in the example
+    //   lang, // Optional language tag for the example
+    //   file, // Path to the file containing the example
+    //   line, // Line number of the example
+    //
+    //   // Non standard, optional properties
+    //   doc, // Documentation description object as generated
+    //        //   by documentation.js (for findDocumentationExamples)
+    //   md,  // mdast (if extracted from markdown)
+    // }
+    //
+    // Now it's time to transform the list of examples!
+    // By default we do not do anything fancy; we just remove examples
+    // marked as `notest` in the language tag; you could change this to
+    // for example to only include examples marked as `tested` in the language
+    // tag.
+
     reject(({lang}) =>
-        isdef(lang) && lang.match('noexec'))
+        isdef(lang) && lang.match('notest'))
+
+    // Finally we have a so called `sink` in our processing pipeline;
+    // a step that consumes the entire sequence and does something
+    // useful with it!
+
+    // Function from ferrum, equivalent to Array.from; enable this if
+    // you remove the source map generation feature; generatingSourceMap
+    // can handle a sequence/iterable; your template engine may not
+    //list,
+
+    // generatingSourceMap performs some tricky magic to make it
+    // possible to generate source maps with arbitrary renderers
     generatingSourceMap((examples) =>
-        makeSquirrelly().render(template, { examples })));
+        // This is where the actual rendering happens. See the
+        // squirrelly documentation!
+        makeSquirrelly().render(template, {
+          // Your custom squirrelly variables go here!
+          examples })));
 }
 
 module.exports = {
-  defaultTemplate,
   _requireNocache,
   makeSquirrelly,
-  extractExamples,
-  renderExamples,
-  generatingSourceMap
+  defaultTemplate,
+  extractFromMdast,
+  extractFromMarkdown,
+  extractFromDoc,
+  findDocExamples,
+  findMdExamples,
+  generatingSourceMap,
+  generateTests,
 };

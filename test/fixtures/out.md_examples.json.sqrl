@@ -1,0 +1,14 @@
+[
+  {
+    "line": 4,
+    "code": "console.log(\"Example 13\");",
+    "lang": "bang",
+    "file": "{{test_dir}}/fixtures/dummy3.md"
+  },
+  {
+    "line": 9,
+    "code": "console.log(\"Example 14\");",
+    "lang": null,
+    "file": "{{test_dir}}/fixtures/dummy3.md"
+  }
+]

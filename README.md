@@ -3,8 +3,12 @@
 
 Test your documentation!
 
-[Github](https://github.com/adobe/ferrum)  
+[Github](https://github.com/adobe/ferrum)
 [API Documentation](https://www.ferrumjs.org)
+
+```c++
+void main
+```
 
 <a name="build"></a>
 ### Build

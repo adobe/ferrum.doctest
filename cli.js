@@ -1,11 +1,32 @@
+#! /usr/bin/env node
+
+/*
+ * Copyright 2019 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+/* eslint-disable no-console */
+
 const fs = require('fs');
+const path = require('path');
+const assert = require('assert');
 const process = require('process');
+const { env } = require('process');
 const { spawn } = require('child_process');
 const { tmpdir } = require('os');
 const { promisify } = require('util');
 const { exit } = require('process');
 const { uuid4: uuid } = require('uuid');
-const { type, isdef, each, xnor, pipe, prepend } = require('ferrum');
+const {
+  type, isdef, xor, pipe, prepend, empty, join, exec,
+} = require('ferrum');
 const { _requireNocache, defaultTemplate, generateTests } = require('./');
 
 // Down with singletons!
@@ -41,7 +62,7 @@ const unreachable = () => {
 const isRoot = (p) => {
   // Note: Using this slightly convoluted method for portability
   const p_ = path.normalize(p);
-  return path.dirname(p_) == p;
+  return path.dirname(p_) === p;
 };
 
 /**
@@ -57,7 +78,7 @@ const system = (cmd, opts) => {
   const [command, ...args] = cmd;
   return spawn(command, args, {
     stdio: ['inherit', 'inherit', 'inherit'],
-    ...opts
+    ...opts,
   });
 };
 
@@ -71,7 +92,7 @@ const system = (cmd, opts) => {
  * @returns {ChildProcess}
  */
 const systemShell = (shellCode, opts) =>
-    system([shellCode], { shell: true, ...opts });
+  system([shellCode], { shell: true, ...opts });
 
 /**
  * Wait until a child process exits
@@ -83,8 +104,8 @@ const systemShell = (shellCode, opts) =>
  *   soon as the child process exits.
  */
 const onChildExit = (child) => new Promise((res) =>
-    child.on('exit', (code) =>
-        res(code)));
+  child.on('exit', (code) =>
+    res(code)));
 
 /**
  * Ensure that the given parameter is an array
@@ -95,7 +116,7 @@ const onChildExit = (child) => new Promise((res) =>
  *   wrapped in array.
  * @returns {Array}
  */
-const liftArray = (v) => type(v) === Array ? v : [v];
+const liftArray = (v) => (type(v) === Array ? v : [v]);
 
 /**
  * Transform a list encoded as a value separated string.
@@ -119,8 +140,9 @@ const liftArray = (v) => type(v) === Array ? v : [v];
  */
 const transformStringList = (str, divider, ...fns) => pipe(
   empty(str) ? [] : str.split(divider),
-  ...fns
-  join(divider));
+  ...fns,
+  join(divider),
+);
 
 /**
  * Assert; display yargs help + error message and exit if assertion fails.
@@ -151,7 +173,7 @@ const assertCliParams = (v, msg) => {
  * @param {Function} args Handler used to specify the options the command takes.
  * @param {Function} handler Will be invoked to further customize the parameter object.
  */
-const cmd = (y, names, { description, args, handler, usage}) => {
+const cmd = (y, names, { description, args, handler, usage }) => {
   const args_ = (y2) => {
     if (isdef(usage)) {
       y2.usage(usage);
@@ -174,7 +196,8 @@ const cmd = (y, names, { description, args, handler, usage}) => {
  */
 const param = (y, names, typ = 'string', description, opts = {}) => {
   if (type(description) === Object) {
-    return param(y, names, typ, undefined, description);
+    param(y, names, typ, undefined, description);
+    return;
   }
 
   const [name, ...alias] = liftArray(names);
@@ -184,7 +207,7 @@ const param = (y, names, typ = 'string', description, opts = {}) => {
     description,
     nargs: 1,
     requiresArg: true,
-    ...opts
+    ...opts,
   });
 };
 
@@ -199,8 +222,8 @@ const param = (y, names, typ = 'string', description, opts = {}) => {
  * @param {String} description
  * @param {Object} opts Further options will be passed to `Yargs.positional`
  */
-const pos = (y, name, type, description, opts={}) =>
-    y.positional(name, { type, description, ...opts });
+const pos = (y, name, typ, description, opts = {}) =>
+  y.positional(name, { type: typ, description, ...opts });
 
 /**
  * Declare the common parameters of both the env and generate cmd.
@@ -212,7 +235,7 @@ const pos = (y, name, type, description, opts={}) =>
 const declareCommonParams = (y) => {
   param(y, ['template', 't'], 'string', {
     default: null,
-    coerce: (file) => isdef(file) ? readFileSync(file) : defaultTemplate,
+    coerce: (file) => (isdef(file) ? readFileSync(file) : defaultTemplate),
     description: 'Path of the template to use when generating the test file.',
   });
 
@@ -220,16 +243,16 @@ const declareCommonParams = (y) => {
     coerce: liftArray,
     default: [],
     description:
-      'The file or directory to search for javascript files with examples. ' +
-      'Can be specified multiple times.',
+      'The file or directory to search for javascript files with examples. '
+      + 'Can be specified multiple times.',
   });
 
   param(y, ['markdown-source', 'mdsrc'], 'string', {
     coerce: liftArray,
     default: [],
     description:
-      'The file or directory to search for markdown files with examples. ' +
-      'Can be specified multiple times.',
+      'The file or directory to search for markdown files with examples. '
+      + 'Can be specified multiple times.',
   });
 };
 
@@ -245,33 +268,33 @@ const declareEnvCmd = (y) => {
     usage:
       '$0 generate [-t TEMPLATE] [-s JS_SOURCE]... [--mdsrc MD_SOURCE]... [-c SHELL_CODE|COMMAND... [-- COMMAND...]]',
     description:
-      'Like the generate command, this will search for examples in the given ' +
-        'markdown & javascript files/directories and use them to generate' +
-        'a test file & an associated source map.\n' +
-      '\n' +
-      'Unline generate this command will automatically choose a temporary ' +
-        'directory to put the test file and source map in and delete the directory ' +
-        'after the tests have finished.\n' +
-      '\n' +
-      'This will also make `require(\'<yourpackage>\')` calls work by automatically ' +
-        'generating a node_modules folder in the temporary directory and adding a symlink ' +
-        'to the package you are developing.',
+      'Like the generate command, this will search for examples in the given '
+        + 'markdown & javascript files/directories and use them to generate'
+        + 'a test file & an associated source map.\n'
+      + '\n'
+      + 'Unline generate this command will automatically choose a temporary '
+        + 'directory to put the test file and source map in and delete the directory '
+        + 'after the tests have finished.\n'
+      + '\n'
+      + 'This will also make `require(\'<yourpackage>\')` calls work by automatically '
+        + 'generating a node_modules folder in the temporary directory and adding a symlink '
+        + 'to the package you are developing.',
     args(y2) {
       declareCommonParams(y2);
       pos(y2, 'command', 'string',
-          'The command and arguments to execute within the created environment. ' +
-            'Use the -- separator if you need to specify options.')
+        'The command and arguments to execute within the created environment. '
+            + 'Use the -- separator if you need to specify options.');
       param(y2, ['package', 'p'], 'string', {
         description:
-          'The location of the package.json for which an alias should be generated.\n' +
-          '\n' +
-          'Usually the location is automatically detected based on your current directory.'
+          'The location of the package.json for which an alias should be generated.\n'
+          + '\n'
+          + 'Usually the location is automatically detected based on your current directory.',
       });
       param(y2, ['command', 'c'], 'string', {
         description:
-          'The location of the package.json for which an alias should be generated.\n' +
-          '\n' +
-          'Usually the location is automatically detected based on your current directory.'
+          'The location of the package.json for which an alias should be generated.\n'
+          + '\n'
+          + 'Usually the location is automatically detected based on your current directory.',
       });
     },
 
@@ -283,9 +306,9 @@ const declareEnvCmd = (y) => {
       params.shellCommand = shellCommand;
       delete params.command;
 
-      assertCliParams(xor(!empty(argsCommand), isdef(shellCommand))
-          'Please specify a command either in the arguments or with -c.');
-    }
+      assertCliParams(xor(!empty(argsCommand), isdef(shellCommand)),
+        'Please specify a command either in the arguments or with -c.');
+    },
   });
 };
 
@@ -301,27 +324,27 @@ const declareGenerateCmd = (y) => {
     usage:
       '$0 generate [-t TEMPLATE] [-s JS_SOURCE]... [--mdsrc MD_SOURCE]... [-o FILE] [-m MAP_FILE]',
     description:
-      'Generate a test file from the given examples.\n' +
-      '\n' +
-      'This will iterate over all the files/directories containing ' +
-        'javascript/markdown files and extract the examples. ' +
-        'These will be passed through the given template to generate ' +
-        'test files suitable for use with your test runner.\n' +
-      '\n' +
-      'A souce map file will also be generated alongside the test file.',
+      'Generate a test file from the given examples.\n'
+      + '\n'
+      + 'This will iterate over all the files/directories containing '
+        + 'javascript/markdown files and extract the examples. '
+        + 'These will be passed through the given template to generate '
+        + 'test files suitable for use with your test runner.\n'
+      + '\n'
+      + 'A souce map file will also be generated alongside the test file.',
     args(y2) {
       declareCommonParams(y2);
       param(y2, ['out', 'o'], 'string',
-        'Where to write the generated test file.' +
-        'By default the test file is written to stdout.');
+        'Where to write the generated test file.'
+        + 'By default the test file is written to stdout.');
       param(y2, ['sourcemap', 'm'], 'string',
-        'Where to write the source map. ' +
-        'Defaults to <out>.js.sourcemap');
+        'Where to write the source map. '
+        + 'Defaults to <out>.js.sourcemap');
     },
     handler(params) {
       const { '--': unparsed } = params;
       assertCliParams(empty(unparsed), 'Parameters behind `--` are not supported');
-    }
+    },
   });
 };
 
@@ -344,7 +367,7 @@ const parseArgs = (argv) => {
   y.parserConfiguration({
     'strip-dashed': true,
     'strip-aliased': true,
-    'populate--': true
+    'populate--': true,
   });
 
   // Configure console width if available
@@ -360,13 +383,13 @@ const parseArgs = (argv) => {
 
   // Parse args
   const {
-    _: [command, /* ...never set */],
+    _: [command],
     '--': unparsed = [],
-    '$0': executable,
+    // $0: executable,
     ...params
   } = y.parse(argv);
 
-  return {_: command, unparsed, ...params};
+  return { _: command, unparsed, ...params };
 };
 
 /**
@@ -394,7 +417,7 @@ const findPkg = async (pkg, opts = {}) => {
   // This is the package.json
   if ((await stat(p)).isFile()) {
     try {
-      const {name} = JSON.parse(await readFile(p));
+      const { name } = JSON.parse(await readFile(p));
       assert(isdef(name), 'Name not set in package.json?');
       return [path.dirname(p), name];
     } catch (err) {
@@ -406,13 +429,13 @@ const findPkg = async (pkg, opts = {}) => {
   // This is a directory. Does it contain package.json?
   let err;
   try {
-    return await findPkg(path.join(pkg, 'package.json');
+    return await findPkg(path.join(pkg, 'package.json'));
   } catch (e) {
     err = e;
   }
 
   // No package.json! Try finding one in the super dir?
-  if (tryParents && err.code == 'ENOENT' && !isRoot(p)) {
+  if (tryParents && err.code === 'ENOENT' && !isRoot(p)) {
     return findPkg(path.dirname(p), opts);
   }
 
@@ -438,8 +461,8 @@ const findPkg = async (pkg, opts = {}) => {
  */
 const cliGenerate = async (params) => {
   const {
-    sourcemap = isdef(out) ? `${out}.map` : out,
     out,
+    sourcemap = isdef(out) ? `${out}.map` : out,
     ...rest
   } = params;
 
@@ -452,13 +475,15 @@ const cliGenerate = async (params) => {
   // Write source map
   if (isdef(sourcemap)) {
     forks.push(
-        writeFile(sourcemap, JSON.stringify(sourcemapData)));
+      writeFile(sourcemap, JSON.stringify(sourcemapData)),
+    );
   }
 
   // Write actual output
   if (isdef(out)) {
     forks.push(
-        writeFile(out, testData));
+      writeFile(out, testData),
+    );
   } else {
     console._stdout.write(testData);
   }
@@ -479,8 +504,8 @@ const cliGenerate = async (params) => {
  * @param {Object} params yargs parsed CLI params
  * @param {String} params.shellCommand Command; will be executed as shell code
  *   Behaviour is undefined if both argsCommand and shellCommand are given.
- * @param {String[]} params.argsCommand Command; will be execute directly (without passing through the shell)
- *   Behaviour is undefined if both argsCommand and shellCommand are given.
+ * @param {String[]} params.argsCommand Command; will be execute directly (without passing
+ *   through the shell). Behaviour is undefined if both argsCommand and shellCommand are given.
  * @param {String} params.package Path to the package.json or the directory containing it.
  *   If this is not given, the current directory and it's parents will be searched for
  *   a package.json.
@@ -495,24 +520,26 @@ const cliExecute = async (params) => {
   } = params;
 
   // Try to find the name of the package & it's location
-  const [pkgDir, pkgName] = exec(() => {
+  const [pkgDir, pkgName] = await exec(async () => {
     try {
-      return  isdef(pkg)
+      return isdef(pkg)
         ? await findPkg(pkg)
-        : await findPkg('.', { tryParents: true }));
+        : await findPkg('.', { tryParents: true });
 
     // Error while trying to find package.json
     } catch (er) {
       yargs.printHelp();
       if (er.__findPkgJsonFile) {
         console.error(
-          "[ERROR] Encountered exception while trying to parse package.json at",
-          `${er.__findPkgJsonFile}: `, er);
+          '[ERROR] Encountered exception while trying to parse package.json at',
+          `${er.__findPkgJsonFile}: `, er,
+        );
       } else {
         console.error(
-          "[ERROR] Encountered exception while trying to find package.json: ", er);
+          '[ERROR] Encountered exception while trying to find package.json: ', er,
+        );
       }
-      exit(1);
+      return exit(1);
     }
   });
 
@@ -523,19 +550,20 @@ const cliExecute = async (params) => {
   // Provide the symlink to make `require('<pkg>')` possible
   await mkdir(`${tmp}/node_modules`);
   await symlink(`${tmp}/node_modules/${pkgName}`, pkgDir);
-  env.NODE_PATH = transformStrList(env.NODE_PATH, ':',
-      prepend(`${tmp}/node_modules`));
+  env.NODE_PATH = transformStringList(env.NODE_PATH, ':',
+    prepend(`${tmp}/node_modules`));
 
   // Create the test file
-  const r = await cliGenerate({
+  await cliGenerate({
     out: `${tmp}/node_modules/examples.test.js`,
-    ...generateOpts});
+    ...generateOpts });
 
   // Run the command
   return onChildExit(
-      isdef(shellCommand)
-          ? systemShell(shellCommand)
-          : system(argsCommand));
+    isdef(shellCommand)
+      ? systemShell(shellCommand)
+      : system(argsCommand),
+  );
 };
 
 /**
@@ -548,15 +576,15 @@ const cliExecute = async (params) => {
  */
 const main = (...args) => {
   // This will also automatically process --help and completion
-  const {_: command, ...params} = parseArgs(yargs, args);
+  const { _: command, ...params } = parseArgs(yargs, args);
 
   if (command === 'exec') {
     return cliGenerate(params);
-  } else (command === 'generate') {
+  } else if (command === 'generate') {
     return cliExecute(params);
   }
 
-  unreachable();
+  return unreachable();
 };
 
 /**
@@ -566,7 +594,7 @@ const main = (...args) => {
  * @private
  */
 const onUncaught = (e) => {
-  console.error("[FATAL] Uncaught exception: ", e);
+  console.error('[FATAL] Uncaught exception: ', e);
   exit(1);
 };
 
@@ -601,7 +629,7 @@ module.exports = {
   findPkg,
   cliGenerate,
   cliExecute,
-  main
+  main,
 };
 
 if (require.main === module) {

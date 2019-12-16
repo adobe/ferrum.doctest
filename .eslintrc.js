@@ -57,10 +57,20 @@ module.exports = {
       "caughtErrorsIgnorePattern": "^_.*$"
     }],
 
+    // Allow Anonymous generator functions
+    'func-names': 'off',
+
+    // Allow line break in one line arrow functions
+    'implicit-arrow-linebreak': 'off',
+
+    // Longer inline destructuring
+    'object-curly-newline': 'off',
+
     // Required for some more complex algorithms
     'no-labels': 'off',
     'no-continue': 'off',
     'no-plusplus': 'off',
+    'no-await-in-loop': 'off',
 
     // enforce license header (todo: improve plugin to support patterns for multi-lines)
     'header/header': [2, 'block', ['',

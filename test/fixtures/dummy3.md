@@ -1,7 +1,10 @@
 # Hello World
 
 ```bang
-console.log("Example 14", __dirname, __filename);
+require('ferrum.doctest'); // should work
+console.log('dirname:', __dirname);
+console.log('filename:', __filename);
+console.log("Example 14");
 console.log("Example 15");
 ```
 

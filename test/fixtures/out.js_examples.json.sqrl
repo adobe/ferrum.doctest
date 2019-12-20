@@ -3,7 +3,7 @@
     "code": "console.log(\"Example 3\");",
     "lang": null,
     "file": "{{test_dir}}/fixtures/dummy1.js",
-    "line": 25,
+    "line": 26,
     "name": "dummy1.js fn1 #0"
   },
   {
@@ -11,13 +11,54 @@
     "code": "console.log(\"Example 1\");",
     "lang": "foo,bar",
     "file": "{{test_dir}}/fixtures/dummy1.js",
+    "md": {
+      "type": "code",
+      "lang": "foo,bar",
+      "value": "console.log(\"Example 1\");",
+      "position": {
+        "start": {
+          "line": 1,
+          "column": 1,
+          "offset": 0
+        },
+        "end": {
+          "line": 3,
+          "column": 4,
+          "offset": 40
+        },
+        "indent": [
+          1,
+          1
+        ]
+      }
+    },
     "name": "dummy1.js fn1 #1"
   },
   {
     "line": 20,
-    "code": "console.log(\"Example 2\");",
+    "code": "require('ferrum.doctest'); // should work\nconsole.log(\"Example 2\");",
     "lang": null,
     "file": "{{test_dir}}/fixtures/dummy1.js",
+    "md": {
+      "type": "code",
+      "lang": null,
+      "value": "require('ferrum.doctest'); // should work\nconsole.log(\"Example 2\");",
+      "position": {
+        "start": {
+          "line": 7,
+          "column": 1,
+          "offset": 53
+        },
+        "end": {
+          "line": 8,
+          "column": 30,
+          "offset": 128
+        },
+        "indent": [
+          1
+        ]
+      }
+    },
     "name": "dummy1.js fn1 #2"
   },
   {
@@ -32,6 +73,27 @@
     "code": "console.log(\"Example 4\");",
     "lang": "foo,bar",
     "file": "{{test_dir}}/fixtures/dummy2.js",
+    "md": {
+      "type": "code",
+      "lang": "foo,bar",
+      "value": "console.log(\"Example 4\");",
+      "position": {
+        "start": {
+          "line": 1,
+          "column": 1,
+          "offset": 0
+        },
+        "end": {
+          "line": 3,
+          "column": 4,
+          "offset": 40
+        },
+        "indent": [
+          1,
+          1
+        ]
+      }
+    },
     "name": "dummy2.js Baz #1"
   },
   {
@@ -39,6 +101,24 @@
     "code": "console.log(\"Example 5\");",
     "lang": null,
     "file": "{{test_dir}}/fixtures/dummy2.js",
+    "md": {
+      "type": "code",
+      "lang": null,
+      "value": "console.log(\"Example 5\");",
+      "position": {
+        "start": {
+          "line": 7,
+          "column": 1,
+          "offset": 53
+        },
+        "end": {
+          "line": 7,
+          "column": 30,
+          "offset": 82
+        },
+        "indent": []
+      }
+    },
     "name": "dummy2.js Baz #2"
   },
   {
@@ -53,6 +133,27 @@
     "code": "console.log(\"Example 7\");",
     "lang": "foo,bar",
     "file": "{{test_dir}}/fixtures/dummy2.js",
+    "md": {
+      "type": "code",
+      "lang": "foo,bar",
+      "value": "console.log(\"Example 7\");",
+      "position": {
+        "start": {
+          "line": 1,
+          "column": 1,
+          "offset": 0
+        },
+        "end": {
+          "line": 3,
+          "column": 4,
+          "offset": 40
+        },
+        "indent": [
+          1,
+          1
+        ]
+      }
+    },
     "name": "dummy2.js foo #1"
   },
   {
@@ -60,10 +161,28 @@
     "code": "console.log(\"Example 8\");",
     "lang": null,
     "file": "{{test_dir}}/fixtures/dummy2.js",
+    "md": {
+      "type": "code",
+      "lang": null,
+      "value": "console.log(\"Example 8\");",
+      "position": {
+        "start": {
+          "line": 7,
+          "column": 1,
+          "offset": 53
+        },
+        "end": {
+          "line": 7,
+          "column": 30,
+          "offset": 82
+        },
+        "indent": []
+      }
+    },
     "name": "dummy2.js foo #2"
   },
   {
-    "code": "console.log(\"Example 12\");",
+    "code": "console.log(\"Example 12\");\nconsole.log(\"Example 13\");",
     "lang": null,
     "file": "{{test_dir}}/fixtures/dummy2.js",
     "line": 54,
@@ -74,6 +193,27 @@
     "code": "console.log(\"Example 10\");",
     "lang": "foo,bar",
     "file": "{{test_dir}}/fixtures/dummy2.js",
+    "md": {
+      "type": "code",
+      "lang": "foo,bar",
+      "value": "console.log(\"Example 10\");",
+      "position": {
+        "start": {
+          "line": 1,
+          "column": 1,
+          "offset": 0
+        },
+        "end": {
+          "line": 3,
+          "column": 4,
+          "offset": 41
+        },
+        "indent": [
+          1,
+          1
+        ]
+      }
+    },
     "name": "dummy2.js iface1 #1"
   },
   {
@@ -81,6 +221,24 @@
     "code": "console.log(\"Example 11\");",
     "lang": null,
     "file": "{{test_dir}}/fixtures/dummy2.js",
+    "md": {
+      "type": "code",
+      "lang": null,
+      "value": "console.log(\"Example 11\");",
+      "position": {
+        "start": {
+          "line": 7,
+          "column": 1,
+          "offset": 54
+        },
+        "end": {
+          "line": 7,
+          "column": 31,
+          "offset": 84
+        },
+        "indent": []
+      }
+    },
     "name": "dummy2.js iface1 #2"
   }
 ]

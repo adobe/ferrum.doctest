@@ -10,19 +10,20 @@
  * governing permissions and limitations under the License.
  */
 
-/**
- * ```foo,bar
- * console.log("Example 1");
- * ```
- *
- * Paragraph
- *
- *     require('ferrum.doctest'); // should work
- *     console.log("Example 2");
- *
- * @returns {null}
- * @public
- * @example
- * console.log("Example 3");
- */
-const fn1 = () => null;
+const assert = require('assert');
+const { AssertionError } = require('assert');
+const { typename, type } = require('ferrum');
+
+const ckThrows = async (cls, fn) => {
+  let err;
+  try {
+    await fn();
+    throw AssertionError({ message: 'Function should have thrown.' });
+  } catch (e) {
+    err = e;
+  }
+  assert(err instanceof cls, `Error (${typename(type(err))}) should be an instance of ${typename(cls)}.`);
+  return err;
+};
+
+module.exports = { ckThrows };

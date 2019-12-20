@@ -90,7 +90,6 @@ const _requireNocache = (mod) => {
 const makeSquirrelly = () => {
   const Sqrl = _requireNocache('squirrelly');
   Sqrl.defineFilter('escapeLit', JSON.stringify);
-  Sqrl.defineFilter('dirname', path.dirname);
   Sqrl.autoEscaping(false);
   return Sqrl;
 };
@@ -192,10 +191,10 @@ const extractFromMdast = (ast, opts = {}) => {
  * Basically just extracts a list of code blocks…
  *
  * ```js
- * const { assertSequenceEquals } = require('ferrum');
+ * const { assertSequenceEquals, pipe, multiline, map } = require('ferrum');
  * const { extractFromMarkdown } = require('ferrum.doctest');
  *
- * const md = `
+ * const md = multiline(`
  *   # Hello World
  *
  *   This is a text
@@ -209,13 +208,17 @@ const extractFromMdast = (ast, opts = {}) => {
  *
  *       Example no 2
  *
- * `.replace(/^  /mg, '').replace(/^\n/, '');
+ * `);
  *
  * assertSequenceEquals(
- *   extractFromMarkdown(md, { file: 'anon_file' }),
+ *   pipe(
+ *     extractFromMarkdown(md, { file: 'anon_file' }),
+ *     // Delete the `md` (markdown ast) property from the examples
+ *     // (It's a bit much to test)
+ *     map(({md, ...obj}) => obj)),
  *   [
- *     { code: 'Example no 1\nSecond line', line: 6, lang: 'js', file: 'anon_file' },
- *     { code: 'Example no 2', line: 12, lang: null, file: 'anon_file' }
+ *     { code: 'Example no 1\nSecond line', line: 6, lang: 'js', file: 'anon_file', name: 'anon_file #0' },
+ *     { code: 'Example no 2', line: 12, lang: null, file: 'anon_file', name: 'anon_file #1' }
  *   ]
  * );
  * ```
@@ -364,13 +367,15 @@ const findDocExamples = async (paths) => pipe(
  * const { _findFs } = require('ferrum.doctest');
  *
  * assertSequenceEquals(
- *   await _findFs('test/fixtures', (path, ent) => !end.isDirectory()),
+ *   await _findFs('test/fixtures', (path, ent) => !ent.isDirectory()),
  *   [
- *     'test/fixtures/',
  *     'test/fixtures/dummy1.js',
  *     'test/fixtures/dummy2.js',
  *     'test/fixtures/dummy3.md',
- *     'test/fixtures/examples.out.json'
+ *     'test/fixtures/out.js',
+ *     'test/fixtures/out.js.map.sqrl',
+ *     'test/fixtures/out.js_examples.json.sqrl',
+ *     'test/fixtures/out.md_examples.json.sqrl'
  *   ]);
  * ```
  *
@@ -408,7 +413,7 @@ const _findFs = async (p, fn=() => true, _ent=undefined) => {
 const findMarkdownExamples = async (paths) => {
   const _paths = pipe(
     paths,
-    map(path.normalize),
+    map(path.resolve),
     map((p) => _findFs(p, (p_, ent) =>
       ent.isFile() && path.extname(p_) === '.md')));
 
@@ -553,6 +558,7 @@ const generatingSourceMap = curry('generatingSourceMap', async (examples, render
         },
       });
 
+      outLineNo += 1;
       inLineNo += 1;
     }
   }
@@ -577,10 +583,11 @@ const generatingSourceMap = curry('generatingSourceMap', async (examples, render
  * Use like this:
  *
  * ```
+ * const path = require('path');
  * const fs = require('fs');
  * const { promisify } = require('util');
- * const { assertEquals } = require('ferrum');
- * const { generateTests } = require('ferrum.doctest');
+ * const { assertEquals, pipe } = require('ferrum');
+ * const { generateTests, makeSquirrelly } = require('ferrum.doctest');
  *
  * const readFile = (file) => promisify(fs.readFile)(file, 'utf-8');
  * const writeFile = promisify(fs.writeFile);
@@ -589,10 +596,18 @@ const generatingSourceMap = curry('generatingSourceMap', async (examples, render
  * const jsFile = `${dir}/out.js`;
  * const mapFile = `${jsFile}.map`;
  *
- * const [sourceCode, sourceMap] = await generateTests({
+ * // This is the actual call to generateTests; the rest around
+ * // it is just making extra IO happen
+ * let [sourceCode, sourceMap] = await generateTests({
  *   source: [dir],
  *   markdownSource: [dir],
  * });
+ *
+ * // Add cross references between code & source map so tools
+ * // can find the map/code from each other
+ * sourceMap._file = path.basename(jsFile);
+ * // Place at the bottom to avoid invalidating the source map
+ * sourceCode += `\n//# sourceMappingURL=${path.basename(mapFile)}\n`;
  *
  * // Write to disk
  * // await Promise.all(
@@ -603,10 +618,16 @@ const generatingSourceMap = curry('generatingSourceMap', async (examples, render
  * // from disk and compare with our results
  * const [expectedCode, expectedMap] = await Promise.all([
  *   readFile(jsFile),
- *   readFile(mapFile)]);
+ *   readFile(`${mapFile}.sqrl`)]);
  *
  * assertEquals(sourceCode, expectedCode);
- * assertEquals(sourceMap.toJSON(), JSON.parse(expectedMap));
+ * assertEquals(
+ *   sourceMap.toJSON(),
+ *   // Handle absolute paths in the reference document
+ *   pipe(
+ *     expectedMap,
+ *     (tmpl) => makeSquirrelly().Render(tmpl, { test_dir: __dirname + '/test' }),
+ *     JSON.parse));
  * ```
  *
  * @function

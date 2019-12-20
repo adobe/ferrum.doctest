@@ -1,32 +1,25 @@
 <a name="ferrum"></a>
-# Ferrum
+# Ferrum Doctest
 
-Test your documentation!
-
-[Github](https://github.com/adobe/ferrum)
-[API Documentation](https://www.ferrumjs.org)
-
-```c++
-void main
-```
+Ferrum.doctest 
 
 <a name="build"></a>
 ### Build
 
-```bash
+```bash,notest
 $ npm install
 ```
 
 <a name="test"></a>
 ### Test
 
-```bash
+```bash,notest
 $ npm test
 ```
 
 <a name="lint"></a>
 ### Lint
 
-```bash
+```bash,notest
 $ npm run lint
 ```

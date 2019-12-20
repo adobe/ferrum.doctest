@@ -11,11 +11,11 @@
  */
 
 /* global it */
-const assert = require('assert');
+const { strictEqual: ckIs } = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { promisify } = require('util');
-const { assertSequenceEquals, pipe, map, type, list, mapSort, get } = require('ferrum');
+const { assertSequenceEquals: ckSeqEq, pipe, map, type, list, mapSort, get } = require('ferrum');
 const { makeSquirrelly, findDocExamples, findMarkdownExamples } = require('../');
 
 const readFile = (file) => promisify(fs.readFile)(file, 'utf-8');
@@ -24,10 +24,14 @@ it('extractFromDoc, findDocExamples', async () => {
   const generated = pipe(
     await findDocExamples([`${__dirname}/fixtures`]),
     map(({doc, ...fields}) => {
-      assert.strictEqual(type(doc), Object);
-      assert.strictEqual(type(doc.description), Object);
+      ckIs(type(doc), Object);
+      ckIs(type(doc.description), Object);
       return fields;
-    }));
+    }),
+    // Decay any type information in the mdast
+    list,
+    JSON.stringify,
+    JSON.parse);
 
   const expected = pipe(
     await readFile(`${__dirname}/fixtures/out.js_examples.json.sqrl`),
@@ -35,7 +39,7 @@ it('extractFromDoc, findDocExamples', async () => {
     JSON.parse);
 
   const sorted = mapSort(get('name'));
-  assertSequenceEquals(
+  ckSeqEq(
       sorted(generated),
       sorted(expected));
 });
@@ -44,7 +48,7 @@ it('findMarkdownExamples', async () => {
   const generated = pipe(
     await findMarkdownExamples([`${__dirname}/fixtures`]),
     map(({md, ...fields}) => {
-      assert.strictEqual(md.type, 'code');
+      ckIs(md.type, 'code');
       return fields;
     }));
 
@@ -54,7 +58,7 @@ it('findMarkdownExamples', async () => {
     JSON.parse);
 
   const sorted = mapSort(get('name'))
-  assertSequenceEquals(
+  ckSeqEq(
       sorted(generated),
       sorted(expected));
 });

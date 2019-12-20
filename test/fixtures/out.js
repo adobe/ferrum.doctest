@@ -5,21 +5,22 @@ describe('Documentation Examples', () => {
     const __filename = "/home/karo/pr0j/adobe/ferrum.doctest/test/fixtures/dummy1.js";
     const __dirname = require('path').dirname("/home/karo/pr0j/adobe/ferrum.doctest/test/fixtures/dummy1.js");
 
-    console.log("Example 3", __dirname, __filename);
+    console.log("Example 3");
   });
 
   it("dummy1.js fn1 #1", async () => {
     const __filename = "/home/karo/pr0j/adobe/ferrum.doctest/test/fixtures/dummy1.js";
     const __dirname = require('path').dirname("/home/karo/pr0j/adobe/ferrum.doctest/test/fixtures/dummy1.js");
 
-    console.log("Example 1", __dirname, __filename);
+    console.log("Example 1");
   });
 
   it("dummy1.js fn1 #2", async () => {
     const __filename = "/home/karo/pr0j/adobe/ferrum.doctest/test/fixtures/dummy1.js";
     const __dirname = require('path').dirname("/home/karo/pr0j/adobe/ferrum.doctest/test/fixtures/dummy1.js");
 
-    console.log("Example 2", __dirname, __filename);
+    require('ferrum.doctest'); // should work
+    console.log("Example 2");
   });
 
   it("dummy2.js Baz #0", async () => {
@@ -90,7 +91,10 @@ describe('Documentation Examples', () => {
     const __filename = "/home/karo/pr0j/adobe/ferrum.doctest/test/fixtures/dummy3.md";
     const __dirname = require('path').dirname("/home/karo/pr0j/adobe/ferrum.doctest/test/fixtures/dummy3.md");
 
-    console.log("Example 14", __dirname, __filename);
+    require('ferrum.doctest'); // should work
+    console.log('dirname:', __dirname);
+    console.log('filename:', __filename);
+    console.log("Example 14");
     console.log("Example 15");
   });
 
@@ -103,3 +107,4 @@ describe('Documentation Examples', () => {
     console.log("Example 18");
   });
 });
+//# sourceMappingURL=out.js.map

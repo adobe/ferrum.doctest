@@ -27,12 +27,11 @@
   },
   "homepage": "https://github.com/adobe/ferrum.doctest#readme",
   "dependencies": {
-    "@bengourley/source-map-decoder": "^1.0.1-0",
     "documentation": "^12.1.4",
     "ferrum": "^1.4.1",
-    "mocha.parallel": "^0.15.6",
     "remark": "^11.0.2",
     "source-map": "^0.7.3",
+    "source-map-support": "^0.5.16",
     "squirrelly": "^7.9.0",
     "uuid": "^3.3.3",
     "yargs": "^15.0.2"

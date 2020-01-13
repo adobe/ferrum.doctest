@@ -10,16 +10,17 @@
  * governing permissions and limitations under the License.
  */
 const fs = require('fs');
+const vm = require('vm');
 const path = require('path');
 const { promisify } = require('util');
 const { v4: uuidgen } = require('uuid');
-const { SourceMapGenerator } = require('source-map');
+const { SourceMapGenerator, SourceMapConsumer } = require('source-map');
 const { parse: parseMarkdown } = require('remark');
 const { build: buildDoc } = require('documentation');
 const {
   map, isdef, flattenTree, pipe, reject, concat, filter, join, get,
   group, enumerate, flat, curry, obj, list, takeDef, size,
-  repeatFn, values,
+  repeatFn, values, type,
 } = require('ferrum');
 
 const stat = promisify(fs.stat);
@@ -165,7 +166,7 @@ const extractFromMdast = (ast, opts = {}) => {
   return pipe(
     flattenTree(ast, (node, rec) =>
       concat([node], rec(node.children || []))),
-    filter(({ type }) => type === 'code'),
+    filter(({ type: t }) => t === 'code'),
     enumerate,
     map(([idx, md]) => {
       const { value: code, lang, position: pos } = md;
@@ -571,6 +572,64 @@ const generatingSourceMap = curry('generatingSourceMap', async (examples, render
   return [join(buf, ''), sourceMap];
 });
 
+const checkSyntax = async (src, opts = {}) => {
+  const { sourcemap } = opts;
+
+  // Gather any syntax errors
+  let ex;
+  try {
+    // eslint-disable-next-line
+    new vm.Script(src);
+    return;
+  } catch (e) {
+    ex = e;
+  }
+
+  // We only act on syntax errors if we have a source map and if the
+  // syntax error has a stack (it's a non standard property)
+  if (!isdef(sourcemap) || type(ex) !== SyntaxError || type(ex.stack) !== String) {
+    throw ex;
+  }
+
+  // Now try parsing the exception using regexp
+  const re = pipe(
+    [
+      /^/,
+      /evalmachine.<anonymous>:(\d+)\n/, // file name, line no
+      /(.*)\n/, // any line – the code
+      /(.*)\n/, // any line – the column indicator
+      /((.|\n)*)/, // multiple lines – rest of the stack trace
+      /$/,
+    ],
+    // Concatenate all the regExps
+    map(({ source }) => source),
+    join(''),
+    (source) => new RegExp(source, 'm'),
+  );
+
+  const mat = ex.stack.match(re);
+  if (!isdef(mat)) {
+    // Could not parse the stack trace; the stack property is non-standard
+    // so support for it is not strictly guaranteed
+    throw ex;
+  }
+
+  // Could parse it! Decode all the fields we extracted
+  const [_all, line_, code, columnIndicator, rest] = mat;
+  const line = Number(line_);
+  const column = columnIndicator.length;
+
+  // Load the source map and resolve
+  const sm = await new SourceMapConsumer(sourcemap);
+  const orig = sm.originalPositionFor({ line, column });
+
+  // Update the information in the stack
+  ex.stack = `${orig.source}:${orig.line}\n`
+    + `${code}\n${columnIndicator}\n${rest}`;
+
+  throw ex;
+};
+
 /**
  * Generate the test code and the source map.
  *
@@ -702,6 +761,14 @@ const generateTests = async (opts) => {
         // Your custom squirrelly variables go here!
         examples,
       })),
+
+    // Detect any syntax errors now; source-map won't apply source
+    // maps if they are detected later
+    async (sourcemap_) => {
+      const [src, sm] = await sourcemap_;
+      await checkSyntax(src, { sourcemap: sm.toJSON() });
+      return [src, sm];
+    },
   );
 };
 
@@ -716,5 +783,6 @@ module.exports = {
   findDocExamples,
   findMarkdownExamples,
   generatingSourceMap,
+  checkSyntax,
   generateTests,
 };

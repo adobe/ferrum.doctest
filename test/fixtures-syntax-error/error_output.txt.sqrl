@@ -1,0 +1,5 @@
+[FATAL] Uncaught exception:  {{test_dir}}/fixtures-syntax-error/syntax-errors.md:13
+    console.log("Example 17");,,,
+                              ^
+
+SyntaxError: Unexpected token

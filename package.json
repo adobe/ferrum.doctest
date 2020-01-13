@@ -28,7 +28,7 @@
   "homepage": "https://github.com/adobe/ferrum.doctest#readme",
   "dependencies": {
     "documentation": "^12.1.4",
-    "ferrum": "^1.5.0",
+    "ferrum": "^1.6.0",
     "remark": "^11.0.2",
     "source-map": "^0.7.3",
     "source-map-support": "^0.5.16",

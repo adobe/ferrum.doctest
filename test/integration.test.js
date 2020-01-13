@@ -29,7 +29,10 @@ const readFile = (file) => promisify(fs.readFile)(file, 'utf-8');
 // Deal with relative paths in our fixtures by using the squirrel
 // template engine
 const sqrl = (tmpl) =>
-  makeSquirrelly().Render(tmpl, { test_dir: __dirname });
+  makeSquirrelly().Render(tmpl, {
+    test_dir: __dirname,
+    proj_dir: path.resolve(path.join(__dirname, '..')),
+  });
 
 const test = (what, ...args) => {
   const last = args.pop();
@@ -147,5 +150,19 @@ describe('integration tests', () => {
       async fn({ stdout }) {
         assert(stdout.match('Hello World'));
       },
+    });
+
+  testFail('Reporting syntax errors',
+    'generate',
+    '--mdsrc', path.join(__dirname, 'fixtures-syntax-error/syntax-errors.md'),
+    async ({ stdout, stderr }) => {
+      ckIs(stdout, '');
+
+      const expect = sqrl(await readFile('test/fixtures-syntax-error/error_output.txt.sqrl'));
+      ckIs(
+        // Without stack trace and with normalized error message
+        stderr.replace(/SyntaxError: Unexpected token.*\n(\s+at.*\n)*$/, 'SyntaxError: Unexpected token\n'),
+        expect,
+      );
     });
 });

@@ -59,7 +59,7 @@
     "lint-staged": "9.5.0",
     "mocha": "7.0.0",
     "mocha-junit-reporter": "1.23.1",
-    "mocha-parallel-tests": "^2.2.2",
+    "mocha-parallel-tests": "2.2.2",
     "nyc": "15.0.0",
     "semantic-release": "16.0.1",
     "snyk": "1.277.1"

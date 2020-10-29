@@ -44,7 +44,7 @@
     "@semantic-release/npm": "7.0.0",
     "@semantic-release/release-notes-generator": "9.0.0",
     "ajv": "6.11.0",
-    "codecov": "3.6.2",
+    "codecov": "3.7.1",
     "commitizen": "4.0.3",
     "cz-conventional-changelog": "3.0.2",
     "docdash": "git+https://github.com/koraa/docdash.git",

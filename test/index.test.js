@@ -15,7 +15,7 @@ const { strictEqual: ckIs } = require('assert');
 const fs = require('fs');
 const { promisify } = require('util');
 const { assertSequenceEquals: ckSeqEq, pipe, map, type, list, mapSort, get } = require('ferrum');
-const { makeSquirrelly, findDocExamples, findMarkdownExamples } = require('../');
+const { makeSquirrelly, findDocExamples, findMarkdownExamples } = require('..');
 
 const readFile = (file) => promisify(fs.readFile)(file, 'utf-8');
 
@@ -35,7 +35,7 @@ it('extractFromDoc, findDocExamples', async () => {
 
   const expected = pipe(
     await readFile(`${__dirname}/fixtures/out.js_examples.json.sqrl`),
-    (tmpl) => makeSquirrelly().Render(tmpl, { test_dir: __dirname }),
+    (tmpl) => makeSquirrelly().render(tmpl, { test_dir: __dirname }),
     JSON.parse,
   );
 
@@ -57,7 +57,7 @@ it('findMarkdownExamples', async () => {
 
   const expected = pipe(
     await readFile(`${__dirname}/fixtures/out.md_examples.json.sqrl`),
-    (tmpl) => makeSquirrelly().Render(tmpl, { test_dir: __dirname }),
+    (tmpl) => makeSquirrelly().render(tmpl, { test_dir: __dirname }),
     JSON.parse,
   );
 
@@ -67,7 +67,6 @@ it('findMarkdownExamples', async () => {
     sorted(expected),
   );
 });
-
 
 // generateTests is tested along with cli.js since cli.js is just generateTests
 // with more IO and CLI params…

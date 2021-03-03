@@ -1,9 +1,9 @@
 {
   "version": 3,
   "sources": [
-    "{{test_dir}}/fixtures/dummy1.js",
-    "{{test_dir}}/fixtures/dummy2.js",
-    "{{test_dir}}/fixtures/dummy3.md"
+    "{{it.test_dir}}/fixtures/dummy1.js",
+    "{{it.test_dir}}/fixtures/dummy2.js",
+    "{{it.test_dir}}/fixtures/dummy3.md"
   ],
   "names": [],
   "mappings": ";;;;;;;IAwBG;;;;;;;IAVA;;;;;;;IAKI;;;;;;;ICIJ;;;;;;;IATA;;;;;;;IAKI;;;;;;;IAmBF;;;;;;;IAVA;;;;;;;IAKI;;;;;;;IAoBN;IACA;;;;;;;IAVA;;;;;;;IAKI;;;;;;;IC9CP;IACA;IACA;IACA;;;;;;;IAKI;IACA;IACA",

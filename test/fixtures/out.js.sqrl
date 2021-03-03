@@ -2,93 +2,93 @@
 describe('Documentation Examples', () => {
 
   it("dummy1.js fn1 #0", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy1.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy1.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy1.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy1.js");
 
     console.log("Example 3");
   });
 
   it("dummy1.js fn1 #1", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy1.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy1.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy1.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy1.js");
 
     console.log("Example 1");
   });
 
   it("dummy1.js fn1 #2", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy1.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy1.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy1.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy1.js");
 
     console.log("Example 2");
   });
 
   it("dummy2.js Baz #0", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy2.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy2.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy2.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy2.js");
 
     console.log("Example 6");
   });
 
   it("dummy2.js Baz #1", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy2.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy2.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy2.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy2.js");
 
     console.log("Example 4");
   });
 
   it("dummy2.js Baz #2", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy2.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy2.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy2.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy2.js");
 
     console.log("Example 5");
   });
 
   it("dummy2.js foo #0", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy2.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy2.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy2.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy2.js");
 
     console.log("Example 9");
   });
 
   it("dummy2.js foo #1", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy2.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy2.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy2.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy2.js");
 
     console.log("Example 7");
   });
 
   it("dummy2.js foo #2", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy2.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy2.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy2.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy2.js");
 
     console.log("Example 8");
   });
 
   it("dummy2.js iface1 #0", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy2.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy2.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy2.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy2.js");
 
     console.log("Example 12");
     console.log("Example 13");
   });
 
   it("dummy2.js iface1 #1", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy2.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy2.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy2.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy2.js");
 
     console.log("Example 10");
   });
 
   it("dummy2.js iface1 #2", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy2.js";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy2.js");
+    const __filename = "{{it.test_dir}}/fixtures/dummy2.js";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy2.js");
 
     console.log("Example 11");
   });
 
   it("dummy3.md #0", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy3.md";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy3.md");
+    const __filename = "{{it.test_dir}}/fixtures/dummy3.md";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy3.md");
 
     console.log('dirname:', __dirname);
     console.log('filename:', __filename);
@@ -97,8 +97,8 @@ describe('Documentation Examples', () => {
   });
 
   it("dummy3.md #1", async () => {
-    const __filename = "{{test_dir}}/fixtures/dummy3.md";
-    const __dirname = require('path').dirname("{{test_dir}}/fixtures/dummy3.md");
+    const __filename = "{{it.test_dir}}/fixtures/dummy3.md";
+    const __dirname = require('path').dirname("{{it.test_dir}}/fixtures/dummy3.md");
 
     console.log("Example 16");
     console.log("Example 17");

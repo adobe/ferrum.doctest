@@ -1,5 +1,4 @@
 #! /usr/bin/env node
-
 /*
  * Copyright 2019 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
@@ -28,7 +27,7 @@ const { v4: uuid } = require('uuid');
 const {
   type, isdef, xor, pipe, prepend, empty, join, exec, each,
 } = require('ferrum');
-const { _requireNocache, defaultTemplate, generateTests } = require('./');
+const { _requireNocache, defaultTemplate, generateTests } = require('.');
 
 // Down with singletons!
 const yargs = () => _requireNocache('yargs');
@@ -177,7 +176,7 @@ const rmRecursiveSync = (file, _ent) => {
  */
 const mkTmpDir = (name) => {
   const dir = `${tmpdir()}/${name}-${uuid()}`;
-  process.on('exit', () => rmRecursiveSync(dir));
+  // process.on('exit', () => rmRecursiveSync(dir));
   mkdirSync(dir, { recursive: true });
   return dir;
 };
@@ -512,7 +511,6 @@ const cliGenerate = async (params) => {
 
   // Do the Work
   let [testData, sourcemapData] = await generateTests(rest);
-
 
   if (isdef(out)) {
     sourcemapData._file = path.relative(path.dirname(sourcemap), out);

@@ -9,6 +9,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
@@ -40,10 +41,10 @@ const readFile = (file) => promisify(fs.readFile)(file, 'utf-8');
  * const { _requireNocache } = require('ferrum.doctest');
  *
  * const sq1 = require('squirrelly');
- * assert.strictEqual(type(sq1.Render), Function);
+ * assert.strictEqual(type(sq1.render), Function);
  *
  * const sq2 = _requireNocache('squirrelly');
- * assert.strictEqual(type(sq2.Render), Function);
+ * assert.strictEqual(type(sq2.render), Function);
  * assert.notStrictEqual(sq1, sq2);
  *
  * assert.strictEqual(sq1, require('squirrelly'));
@@ -90,8 +91,8 @@ const _requireNocache = (mod) => {
  */
 const makeSquirrelly = () => {
   const Sqrl = _requireNocache('squirrelly');
-  Sqrl.defineFilter('escapeLit', JSON.stringify);
-  Sqrl.autoEscaping(false);
+  Sqrl.filters.define('escapeLit', JSON.stringify);
+  Sqrl.defaultConfig.autoEscape = false;
   return Sqrl;
 };
 
@@ -134,13 +135,13 @@ const makeSquirrelly = () => {
  */
 const defaultTemplate = `
 describe('Documentation Examples', () => {
-{{each(options.examples)}}
+{{@each(it.examples) => ex}}
 
-  it({{@this.name | escapeLit}}, async () => {
-    const __filename = {{@this.file | escapeLit}};
-    const __dirname = require('path').dirname({{@this.file | escapeLit}});
+  it({{ex.name | escapeLit}}, async () => {
+    const __filename = {{ex.file | escapeLit}};
+    const __dirname = require('path').dirname({{ex.file | escapeLit}});
 
-    {{@this.code}}
+    {{ex.code}}
   });
 {{/each}}
 });`;
@@ -396,7 +397,6 @@ const _findFs = async (p, fn = () => true, _ent = undefined) => {
 
   return fn(p, ent) ? concat([p], children) : children;
 };
-
 
 /**
  * Find and extract examples from a list of markdown files or
@@ -678,7 +678,7 @@ const checkSyntax = async (src, opts = {}) => {
  * // Deal with relative paths in our fixtures by using the squirrel
  * // template engine
  * const sqrl = (tmpl, fields = {}) =>
- *   makeSquirrelly().Render(tmpl, { test_dir: __dirname + '/test', ...fields });
+ *   makeSquirrelly().render(tmpl, { test_dir: __dirname + '/test', ...fields });
  *
  * // For the purpose of testing we do the opposite: Load the files
  * // from disk and compare with our results
@@ -757,7 +757,7 @@ const generateTests = async (opts) => {
     generatingSourceMap((examples) =>
     // This is where the actual rendering happens. See the
     // squirrelly documentation!
-      makeSquirrelly().Render(template, {
+      makeSquirrelly().render(template, {
         // Your custom squirrelly variables go here!
         examples,
       })),

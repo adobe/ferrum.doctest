@@ -29,7 +29,7 @@ const readFile = (file) => promisify(fs.readFile)(file, 'utf-8');
 // Deal with relative paths in our fixtures by using the squirrel
 // template engine
 const sqrl = (tmpl) =>
-  makeSquirrelly().Render(tmpl, {
+  makeSquirrelly().render(tmpl, {
     test_dir: __dirname,
     proj_dir: path.resolve(path.join(__dirname, '..')),
   });
@@ -86,7 +86,7 @@ describe('integration tests', () => {
   });
 
   test('Empty Output/Stderr', 'generate', '-s', 'no-such-directory', ({ stdout }) => {
-    ckIs(stdout, makeSquirrelly().Render(defaultTemplate, { examples: [] }));
+    ckIs(stdout, makeSquirrelly().render(defaultTemplate, { examples: [] }));
   });
 
   test('Full Generate Fixtures',

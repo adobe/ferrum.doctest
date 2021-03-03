@@ -1,13 +1,13 @@
 {
   "name": "ferrum.doctest",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Test the examples included in your documentation",
   "main": "index.js",
   "bin": {
     "ferrum.doctest": "./cli.js"
   },
   "scripts": {
-    "test": "node ./cli.js exec -s index.js -s cli.js --mdsrc README.md -c 'nyc --reporter=text --reporter=lcov --check-coverage --branches 80 --statements 80 --lines 80 mocha --reporter xunit --reporter-options output=./junit/test-results.xml --require source-map-support/register -t 20000 \"$DOCTEST_FILE\" test'",
+    "test": "node ./cli.js exec -s index.js -s cli.js --mdsrc README.md -c 'nyc --reporter=text --reporter=lcov --check-coverage --branches 80 --statements 80 --lines 80 mocha --reporter mocha-multi --reporter-options spec=-,xunit=junit/test-results.xml --require source-map-support/register -t 20000 \"$DOCTEST_FILE\" test'",
     "test-ci": "npm run test && codecov",
     "lint": "node ./cli.js exec -- eslint --ignore-pattern test/fixtures index.js cli.js test",
     "semantic-release": "semantic-release",
@@ -29,6 +29,7 @@
   "dependencies": {
     "documentation": "^13.1.1",
     "ferrum": "^1.7.0",
+    "mocha-multi": "^1.1.3",
     "remark": "^13.0.0",
     "source-map": "^0.7.3",
     "source-map-support": "^0.5.19",

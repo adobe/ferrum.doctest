@@ -71,6 +71,10 @@ for syntax errors is planned.
 Ferrum.doctest has an extensive api documentation. See [index.js](./blob/master/index.js)
 and the `generateTests()` function in particular.
 
+# Changelog
+
+- *1.0.0* Update to squirelly 8: The `Render` function is now called `render`; some other function names changed too. Variables passed to the render context are now addressed using `it.<variable>` in templates.
+
 <a name="build"></a>
 ### Build
 

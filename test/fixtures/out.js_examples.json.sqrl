@@ -2,7 +2,7 @@
   {
     "code": "console.log(\"Example 3\");",
     "lang": null,
-    "file": "{{test_dir}}/fixtures/dummy1.js",
+    "file": "{{it.test_dir}}/fixtures/dummy1.js",
     "line": 25,
     "name": "dummy1.js fn1 #0"
   },
@@ -10,7 +10,7 @@
     "line": 15,
     "code": "console.log(\"Example 1\");",
     "lang": "foo,bar",
-    "file": "{{test_dir}}/fixtures/dummy1.js",
+    "file": "{{it.test_dir}}/fixtures/dummy1.js",
     "md": {
       "type": "code",
       "lang": "foo,bar",
@@ -38,7 +38,7 @@
     "line": 20,
     "code": "console.log(\"Example 2\");",
     "lang": null,
-    "file": "{{test_dir}}/fixtures/dummy1.js",
+    "file": "{{it.test_dir}}/fixtures/dummy1.js",
     "md": {
       "type": "code",
       "lang": null,
@@ -62,7 +62,7 @@
   {
     "code": "console.log(\"Example 6\");",
     "lang": null,
-    "file": "{{test_dir}}/fixtures/dummy2.js",
+    "file": "{{it.test_dir}}/fixtures/dummy2.js",
     "line": 24,
     "name": "dummy2.js Baz #0"
   },
@@ -70,7 +70,7 @@
     "line": 15,
     "code": "console.log(\"Example 4\");",
     "lang": "foo,bar",
-    "file": "{{test_dir}}/fixtures/dummy2.js",
+    "file": "{{it.test_dir}}/fixtures/dummy2.js",
     "md": {
       "type": "code",
       "lang": "foo,bar",
@@ -98,7 +98,7 @@
     "line": 20,
     "code": "console.log(\"Example 5\");",
     "lang": null,
-    "file": "{{test_dir}}/fixtures/dummy2.js",
+    "file": "{{it.test_dir}}/fixtures/dummy2.js",
     "md": {
       "type": "code",
       "lang": null,
@@ -122,7 +122,7 @@
   {
     "code": "console.log(\"Example 9\");",
     "lang": null,
-    "file": "{{test_dir}}/fixtures/dummy2.js",
+    "file": "{{it.test_dir}}/fixtures/dummy2.js",
     "line": 39,
     "name": "dummy2.js foo #0"
   },
@@ -130,7 +130,7 @@
     "line": 29,
     "code": "console.log(\"Example 7\");",
     "lang": "foo,bar",
-    "file": "{{test_dir}}/fixtures/dummy2.js",
+    "file": "{{it.test_dir}}/fixtures/dummy2.js",
     "md": {
       "type": "code",
       "lang": "foo,bar",
@@ -158,7 +158,7 @@
     "line": 34,
     "code": "console.log(\"Example 8\");",
     "lang": null,
-    "file": "{{test_dir}}/fixtures/dummy2.js",
+    "file": "{{it.test_dir}}/fixtures/dummy2.js",
     "md": {
       "type": "code",
       "lang": null,
@@ -182,7 +182,7 @@
   {
     "code": "console.log(\"Example 12\");\nconsole.log(\"Example 13\");",
     "lang": null,
-    "file": "{{test_dir}}/fixtures/dummy2.js",
+    "file": "{{it.test_dir}}/fixtures/dummy2.js",
     "line": 54,
     "name": "dummy2.js iface1 #0"
   },
@@ -190,7 +190,7 @@
     "line": 45,
     "code": "console.log(\"Example 10\");",
     "lang": "foo,bar",
-    "file": "{{test_dir}}/fixtures/dummy2.js",
+    "file": "{{it.test_dir}}/fixtures/dummy2.js",
     "md": {
       "type": "code",
       "lang": "foo,bar",
@@ -218,7 +218,7 @@
     "line": 50,
     "code": "console.log(\"Example 11\");",
     "lang": null,
-    "file": "{{test_dir}}/fixtures/dummy2.js",
+    "file": "{{it.test_dir}}/fixtures/dummy2.js",
     "md": {
       "type": "code",
       "lang": null,

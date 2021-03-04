@@ -176,7 +176,7 @@ const rmRecursiveSync = (file, _ent) => {
  */
 const mkTmpDir = (name) => {
   const dir = `${tmpdir()}/${name}-${uuid()}`;
-  // process.on('exit', () => rmRecursiveSync(dir));
+  process.on('exit', () => rmRecursiveSync(dir));
   mkdirSync(dir, { recursive: true });
   return dir;
 };

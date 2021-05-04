@@ -1,3 +1,11 @@
+# 1.0.0 (2021-05-04)
+
+
+### Features
+
+* initial version ([59fffe8](https://github.com/adobe/ferrum.doctest/commit/59fffe805f78b3876e84fdcde20a73e91e7f0b77))
+* Report syntax errors correctly ([5becac0](https://github.com/adobe/ferrum.doctest/commit/5becac06a914a5dd8707ebdf8926ec3cee2ea000))
+
 ## [1.4.1](https://github.com/adobe/ferrum/compare/v1.4.0...v1.4.1) (2019-10-08)
 
 

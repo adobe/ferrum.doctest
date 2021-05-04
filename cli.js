@@ -284,7 +284,8 @@ const declareCommonParams = (y) => {
       + 'Can be specified multiple times.',
   });
 
-  param(y, ['markdown-source', 'mdsrc'], 'string', {
+  // https://github.com/yargs/yargs/issues/1939
+  param(y, ['mdsrc', 'markdown-source'], 'string', {
     coerce: liftArray,
     default: [],
     description:
@@ -359,12 +360,8 @@ const declareExecCmd = (y) => {
  * @param {Yargs} yargs instance
  */
 const declareGenerateCmd = (y) => {
-  cmd(y, 'generate', {
-    usage:
-      '$0 generate [-t TEMPLATE] [-s JS_SOURCE]... [--mdsrc MD_SOURCE]... [-o FILE] [-m MAP_FILE]',
-    description:
-      'Generate a test file from the given examples.\n'
-      + '\n'
+  cmd(y, 'generate', { usage: '$0 generate [-t TEMPLATE] [-s JS_SOURCE]... [--mdsrc MD_SOURCE]... [-o FILE] [-m MAP_FILE]',
+    description: 'Generate a test file from the given examples.\n\n'
       + 'This will iterate over all the files/directories containing '
         + 'javascript/markdown files and extract the examples. '
         + 'These will be passed through the given template to generate '

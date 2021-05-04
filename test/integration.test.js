@@ -25,6 +25,7 @@ const { ckThrows } = require('./util');
 
 const exec = promisify(childProcess.execFile);
 const readFile = (file) => promisify(fs.readFile)(file, 'utf-8');
+const writeFile = (file, src) => promisify(fs.writeFile)(file, src);
 
 // Deal with relative paths in our fixtures by using the squirrel
 // template engine
@@ -33,6 +34,24 @@ const sqrl = (tmpl) =>
     test_dir: __dirname,
     proj_dir: path.resolve(path.join(__dirname, '..')),
   });
+
+const compareSqrl = async (tmpl, actual) => {
+  try {
+    ckIs(sqrl(await readFile(tmpl)).trim(), actual.trim());
+  } catch (e) {
+    await writeFile(tmpl, actual);
+    throw e;
+  }
+};
+
+const compareSqrlJSON = async (tmpl, actual) => {
+  try {
+    ckEq(JSON.parse(sqrl(await readFile(tmpl))), actual);
+  } catch (e) {
+    await writeFile(tmpl, JSON.stringify(actual, null, 2));
+    throw e;
+  }
+};
 
 const test = (what, ...args) => {
   const last = args.pop();
@@ -93,7 +112,10 @@ describe('integration tests', () => {
     'generate',
     '-s', 'test/fixtures',
     '--mdsrc', 'test/fixtures', async ({ stdout }) => {
-      assert(sqrl(await readFile('test/fixtures/out.js.sqrl')).startsWith(stdout));
+      await compareSqrl(
+        'test/fixtures/out.js.sqrl',
+        `${stdout.trim()}\n//# sourceMappingURL=out.js.map`,
+      );
     });
 
   test('Full Generate Fixtures +source map',
@@ -101,13 +123,13 @@ describe('integration tests', () => {
     '-s', 'test/fixtures',
     '--mdsrc', 'test/fixtures',
     '-o', `${tmpdir}/out.js`, async () => {
-      ckIs(
-        await readFile(`${tmpdir}/out.js`),
-        sqrl(await readFile('test/fixtures/out.js.sqrl')),
+      await compareSqrl(
+        'test/fixtures/out.js.sqrl',
+        (await readFile(`${tmpdir}/out.js`)),
       );
-      ckEq(
+      await compareSqrlJSON(
+        'test/fixtures/out.js.map.sqrl',
         JSON.parse(await readFile(`${tmpdir}/out.js.map`)),
-        JSON.parse(sqrl(await readFile('test/fixtures/out.js.map.sqrl'))),
       );
     });
 
@@ -157,12 +179,13 @@ describe('integration tests', () => {
     '--mdsrc', path.join(__dirname, 'fixtures-syntax-error/syntax-errors.md'),
     async ({ stdout, stderr }) => {
       ckIs(stdout, '');
-
-      const expect = sqrl(await readFile('test/fixtures-syntax-error/error_output.txt.sqrl'));
-      ckIs(
+      await compareSqrl(
+        'test/fixtures-syntax-error/error_output.txt.sqrl',
         // Without stack trace and with normalized error message
-        stderr.replace(/SyntaxError: Unexpected token.*\n(\s+at.*\n)*$/, 'SyntaxError: Unexpected token\n'),
-        expect,
+        stderr.replace(
+          /SyntaxError: Unexpected token.*\n(\s+at.*\n)*$/,
+          'SyntaxError: Unexpected token\n',
+        ),
       );
     });
 });

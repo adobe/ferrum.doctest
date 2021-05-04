@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/adobe/ferrum.doctest/compare/v1.0.1...v1.0.2) (2021-05-04)
+
+
+### Bug Fixes
+
+* Downgrade documentationjs to 13.2.1 ([bbaa1b9](https://github.com/adobe/ferrum.doctest/commit/bbaa1b907d00955222c102c568ed304cbeebe0c0))
+
 ## [1.0.1](https://github.com/adobe/ferrum.doctest/compare/v1.0.0...v1.0.1) (2021-05-04)
 
 

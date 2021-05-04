@@ -1,6 +1,6 @@
 {
   "name": "ferrum.doctest",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Test the examples included in your documentation",
   "main": "index.js",
   "bin": {
@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/adobe/ferrum.doctest#readme",
   "dependencies": {
-    "documentation": "^13.1.1",
+    "documentation": "13.2.1",
     "ferrum": "^1.7.0",
     "mocha-multi": "^1.1.3",
     "remark": "^13.0.0",

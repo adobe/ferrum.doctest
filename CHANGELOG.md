@@ -1,3 +1,11 @@
+## [1.0.1](https://github.com/adobe/ferrum.doctest/compare/v1.0.0...v1.0.1) (2021-05-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency yargs to v17 ([5e58390](https://github.com/adobe/ferrum.doctest/commit/5e58390602b904859638d596ce652d43badd5c4a))
+* Who broke the build? Updates! ([493a928](https://github.com/adobe/ferrum.doctest/commit/493a928522db93c29203be9be42c01e17b503418))
+
 # 1.0.0 (2021-05-04)
 
 

@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/adobe/ferrum.doctest/compare/v1.0.3...v1.0.4) (2021-05-18)
+
+
+### Bug Fixes
+
+* bump version ([e5e094b](https://github.com/adobe/ferrum.doctest/commit/e5e094be63cba90b59bb3f09bcdbbd807c4ca748))
+
 ## [1.0.3](https://github.com/adobe/ferrum.doctest/compare/v1.0.2...v1.0.3) (2021-05-18)
 
 

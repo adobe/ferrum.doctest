@@ -62,7 +62,7 @@
     "mocha-parallel-tests": "2.3.0",
     "nyc": "15.1.0",
     "semantic-release": "17.4.3",
-    "snyk": "1.598.0"
+    "snyk": "1.599.0"
   },
   "snyk": true,
   "renovate": {

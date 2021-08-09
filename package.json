@@ -1,6 +1,6 @@
 {
   "name": "ferrum.doctest",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Test the examples included in your documentation",
   "main": "index.js",
   "bin": {

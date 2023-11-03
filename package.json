@@ -61,7 +61,7 @@
     "mocha-junit-reporter": "2.0.0",
     "nyc": "15.1.0",
     "semantic-release": "17.4.4",
-    "snyk": "1.677.0"
+    "snyk": "1.1064.0"
   },
   "snyk": true,
   "renovate": {

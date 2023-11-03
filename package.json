@@ -32,7 +32,7 @@
     "remark": "^13.0.0",
     "source-map": "^0.7.3",
     "source-map-support": "^0.5.19",
-    "squirrelly": "^8.0.8",
+    "squirrelly": "^9.0.0",
     "uuid": "^8.3.2",
     "yargs": "^17.1.0"
   },
